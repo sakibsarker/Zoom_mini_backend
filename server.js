@@ -43,6 +43,9 @@ io.on('connection',(socket)=>{
     socket.on('create-new-room',(data)=>{
        createNewRoomHandler(data,socket);
     })
+    socket.on('join-room',(data)=>{
+        joinRoomHandler(data,socket);
+    })
 });
 
 //socket io handlers
@@ -81,13 +84,37 @@ const createNewRoomHandler=(data,socket)=>{
     //emit an event to all users connected 
 
     // to  that room about new user which are right in this room
-    // socket.emit('room-update',{connectedUsers:newUser});
-    const room = rooms.find(room => room.id === roomId); // <-- This line
-    io.to(roomId).emit('room-update', { connectedUsers: room.connectedUsers });
+    socket.emit('room-update',{connectedUsers:newUser});
+    // const room = rooms.find(room => room.id === roomId); // <-- This line
+    // io.to(roomId).emit('room-update', { connectedUsers: room.connectedUsers });    
 
+};
+
+const joinRoomHandler=(data,socket)=>{
+    const {identity,roomId}=data;
+    const newUser={
+        identity,
+        id: uuidv4(),
+        socketId: socket.id,
+        roomId
+    }
+
+    //join room as user which just is trying to join room passing room id
+    const room=rooms.find(room=>room.id===roomId);
+    room.connectedUsers=[...room.connectedUsers,newUser];
+
+    //join socket.io room
+    socket.join(roomId);
     
+    //add new user to connected users array
+  
+    connectedUsers=[...connectedUsers,newUser];
+
+    io.to(roomId).emit('room-update',{connectedUsers: room.connectedUsers});
 
 }
+
+
 
 server.listen(PORT,()=>{
     console.log(`Server is listening on http://localhost:${PORT}`);
