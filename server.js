@@ -127,13 +127,19 @@ const disconnectHandler=(socket)=>{
 
         //leave socket io room
         socket.leave(user.roomId);
-        //emit an event to rest of the users which left in the room new connected user in room
-        io.to(room.id).emit('room-update',{
-            connectedUsers: room.connectedUsers,
-        })
+
 
         //todo
         //close the room if amount of the user which will stay in room will be 0
+        if(room.connectedUsers.length>0){
+            //emit an event to rest of the users which left in the room new connected user in room
+            io.to(room.id).emit('room-update',{
+                connectedUsers: room.connectedUsers,
+            })
+        }else{
+            rooms=rooms.filter((r)=>r.id !==room.id);
+
+        }
 
     }
 }
