@@ -46,6 +46,10 @@ io.on('connection',(socket)=>{
     socket.on('join-room',(data)=>{
         joinRoomHandler(data,socket);
     })
+
+    socket.on('disconnect',()=>{
+        disconnectHandler(socket);
+    })
 });
 
 //socket io handlers
@@ -85,8 +89,7 @@ const createNewRoomHandler=(data,socket)=>{
 
     // to  that room about new user which are right in this room
     socket.emit('room-update',{connectedUsers:newUser});
-    // const room = rooms.find(room => room.id === roomId); // <-- This line
-    // io.to(roomId).emit('room-update', { connectedUsers: room.connectedUsers });    
+   
 
 };
 
@@ -114,7 +117,26 @@ const joinRoomHandler=(data,socket)=>{
 
 }
 
+const disconnectHandler=(socket)=>{
+    //find if user has been registered if yes remove his form room and connected users array
+    const user=connectedUsers.find((user)=>user.socketId===socket.id);
+    if(user){
+        //remove user from room in server
+        const room=rooms.find(room=>room.id===user.roomId);
+        room.connectedUsers=room.connectedUsers.filter(user=>user.socketId!==socket.id);
 
+        //leave socket io room
+        socket.leave(user.roomId);
+        //emit an event to rest of the users which left in the room new connected user in room
+        io.to(room.id).emit('room-update',{
+            connectedUsers: room.connectedUsers,
+        })
+
+        //todo
+        //close the room if amount of the user which will stay in room will be 0
+
+    }
+}
 
 server.listen(PORT,()=>{
     console.log(`Server is listening on http://localhost:${PORT}`);
